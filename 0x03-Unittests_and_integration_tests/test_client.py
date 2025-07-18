@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 
 """
-Unit tests for the client module, focusing on GithubOrgClient.
+Unit and integration tests for the client module, focusing on GithubOrgClient.
 """
 
 import unittest
 from unittest.mock import patch, PropertyMock
-from parameterized import parameterized
+from parameterized import parameterized, parameterized_class
 from client import GithubOrgClient
+from fixtures import org_payload, repos_payload, expected_repos, apache2_repos
 
 
 class TestGithubOrgClient(unittest.TestCase):
@@ -72,3 +73,44 @@ class TestGithubOrgClient(unittest.TestCase):
         """Test that has_license returns correct boolean value"""
         result = GithubOrgClient.has_license(repo, license_key)
         self.assertEqual(result, expected)
+
+
+@parameterized_class(
+    ("org_payload", "repos_payload", "expected_repos", "apache2_repos"),
+    [
+        (org_payload, repos_payload, expected_repos, apache2_repos)
+    ]
+)
+class TestIntegrationGithubOrgClient(unittest.TestCase):
+    """Integration tests for GithubOrgClient.public_repos using fixtures."""
+
+    @classmethod
+    def setUpClass(cls):
+        """Start patching requests.get to return fixture data."""
+        cls.get_patcher = patch('requests.get')
+        mock_get = cls.get_patcher.start()
+
+        # `side_effect` handles requests.get(...).json() calls
+        def json_side_effect(url, *args, **kwargs):
+            if url == cls.org_payload["url"]:
+                return cls.org_payload
+            return cls.repos_payload
+
+        mock_resp = mock_get.return_value
+        mock_resp.json.side_effect = json_side_effect
+
+    @classmethod
+    def tearDownClass(cls):
+        """Stop the requests.get patcher."""
+        cls.get_patcher.stop()
+
+    def test_public_repos(self):
+        """Test that public_repos returns expected repos from integration payload."""
+        client = GithubOrgClient(self.org_payload["login"])
+        self.assertEqual(client.public_repos(), self.expected_repos)
+
+    def test_public_repos_with_license(self):
+        """Test public_repos filtering by license from integration payload."""
+        client = GithubOrgClient(self.org_payload["login"])
+        repos = client.public_repos(license="apache-2.0")
+        self.assertEqual(repos, self.apache2_repos)
