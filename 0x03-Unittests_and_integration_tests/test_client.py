@@ -33,7 +33,7 @@ class TestGithubOrgClient(unittest.TestCase):
         payload = {"repos_url": test_url}
 
         with patch.object(GithubOrgClient, "org", 
-            new_callable=PropertyMock) as mock_org:
+        new_callable=PropertyMock) as mock_org:
             mock_org.return_value = payload
             client = GithubOrgClient("google")
             self.assertEqual(client._public_repos_url, test_url)
