@@ -36,9 +36,17 @@ class MessageViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return Message.objects.filter(conversation__participants=self.request.user)
-
-
+    
     def create(self, request, *args, **kwargs):
+        conversation_id = request.data.get('conversation')
+        try:
+            conversation = Conversation.objects.get(pk=conversation_id)
+        except Conversation.DoesNotExist:
+            return Response({'detail': 'Conversation not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        if request.user not in conversation.participants.all():
+            return Response({'detail': 'You are not a participant in this conversation.'}, status=status.HTTP_403_FORBIDDEN)
+        
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         message = serializer.save()

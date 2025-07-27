@@ -8,13 +8,27 @@ class IsOwner(permissions.BasePermission):
 
 class IsParticipantOfConversation(permissions.BasePermission):
     """
-    Custom permission to allow only participants of a conversation to access it.
+    Custom permission:
+    - Only allow authenticated users.
+    - Only allow participants in the conversation to view/edit/delete messages.
     """
 
+    def has_permission(self, request, view):
+        return request.user and request.user.is_authenticated
+
     def has_object_permission(self, request, view, obj):
-        # Assumes `obj` is a Conversation or Message with a `conversation` FK
+        user = request.user
+
+        if not user.is_authenticated:
+            return False
+
+        # If the object is a Conversation
         if hasattr(obj, 'participants'):
-            return request.user in obj.participants.all()
-        elif hasattr(obj, 'conversation'):
-            return request.user in obj.conversation.participants.all()
+            return user in obj.participants.all()
+
+        # If the object is a Message (has conversation)
+        if hasattr(obj, 'conversation'):
+            if request.method in ['GET', 'PUT', 'PATCH', 'DELETE']:
+                return user in obj.conversation.participants.all()
+
         return False
