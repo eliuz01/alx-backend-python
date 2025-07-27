@@ -14,6 +14,9 @@ class ConversationViewSet(viewsets.ModelViewSet):
     filterset_fields = ['participants']
     search_fields = ['participants__username']
 
+    def get_queryset(self):
+        return Conversation.objects.filter(participants=self.request.user)
+
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -30,6 +33,10 @@ class MessageViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_fields = ['conversation']
     search_fields = ['message_body']
+
+    def get_queryset(self):
+        return Message.objects.filter(conversation__participants=self.request.user)
+
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
