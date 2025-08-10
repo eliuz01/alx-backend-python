@@ -1,10 +1,12 @@
 from django.contrib.auth import get_user_model
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.cache import cache_page
 from django.http import JsonResponse, Http404
 from .models import Message
 
 User = get_user_model()
+
 
 @login_required
 def delete_user(request):
@@ -20,6 +22,7 @@ def inbox_unread(request):
 
 
 @login_required
+@cache_page(60)  # ✅ Cache for 60 seconds
 def conversation_view(request, conversation_id):
     messages = Message.objects.filter(
         conversation_id=conversation_id,
