@@ -10,18 +10,22 @@ User = get_user_model()
 def delete_user(request):
     user = request.user
     user.delete()
-    return redirect('home')  # Adjust to your actual home/landing page
+    return redirect('home')
+
+
+@login_required
+def inbox_unread(request):
+    unread_messages = Message.unread.unread_for_user(request.user)  # ✅ Uses custom manager
+    return render(request, 'messaging/unread_inbox.html', {'messages': unread_messages})
 
 
 @login_required
 def conversation_view(request, conversation_id):
-    # Fetch top-level messages for this conversation by the logged-in user
     messages = Message.objects.filter(
         conversation_id=conversation_id,
         sender=request.user,
         parent_message__isnull=True
-    ).select_related('sender', 'receiver') \
-     .prefetch_related('replies__sender', 'replies__receiver')
+    ).only('id', 'sender', 'receiver', 'content', 'timestamp')  # ✅ Uses .only()
     return render(request, 'messaging/conversation.html', {'messages': messages})
 
 
@@ -51,17 +55,6 @@ def send_message(request):
 
 
 @login_required
-def get_conversation_with_replies(request, conversation_id):
-    messages = Message.objects.filter(
-        conversation_id=conversation_id,
-        sender=request.user,
-        parent_message__isnull=True
-    ).select_related('sender', 'receiver') \
-     .prefetch_related('replies__sender', 'replies__receiver')
-    return render(request, "messaging/conversation.html", {"messages": messages})
-
-
-@login_required
 def message_thread(request, message_id):
     try:
         message = Message.objects.select_related('sender', 'receiver').get(pk=message_id)
@@ -69,8 +62,4 @@ def message_thread(request, message_id):
         raise Http404("Message not found")
 
     replies = message.replies.select_related('sender', 'receiver').all()
-
-    return render(request, "messaging/thread.html", {
-        "message": message,
-        "replies": replies
-    })
+    return render(request, "messaging/thread.html", {"message": message, "replies": replies})

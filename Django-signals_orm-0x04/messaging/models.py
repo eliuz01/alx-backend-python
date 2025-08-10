@@ -1,14 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
-
-
-class UnreadMessagesManager(models.Manager):
-    def unread_for_user(self, user):
-        return self.filter(
-            receiver=user,
-            read=False
-        ).only('id', 'sender', 'receiver', 'content', 'timestamp')
-
+from .managers import UnreadMessagesManager
 
 class Message(models.Model):
     sender = models.ForeignKey(
@@ -41,21 +33,15 @@ class Message(models.Model):
     read = models.BooleanField(default=False)
 
     objects = models.Manager()
-    unread = UnreadMessagesManager()
+    unread = UnreadMessagesManager()  # Custom manager
 
     def __str__(self):
         return f"From {self.sender.username} to {self.receiver.username}"
 
 
 class Notification(models.Model):
-    user = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE
-    )
-    message = models.ForeignKey(
-        Message,
-        on_delete=models.CASCADE
-    )
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    message = models.ForeignKey(Message, on_delete=models.CASCADE)
     is_read = models.BooleanField(default=False)
     timestamp = models.DateTimeField(auto_now_add=True)
 
