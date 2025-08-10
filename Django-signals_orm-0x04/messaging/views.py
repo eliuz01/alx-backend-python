@@ -8,9 +8,20 @@ User = get_user_model()
 
 @login_required
 def delete_user(request):
-    request.user.delete()
+    user = request.user
+    user.delete()
     return redirect('home')  # Adjust to your actual home/landing page
 
+@login_required
+def conversation_view(request, conversation_id):
+    # Fetch top-level messages for this conversation by the logged-in user
+    messages = (
+        Message.objects
+        .filter(conversation_id=conversation_id, sender=request.user, parent_message__isnull=True)
+        .select_related('sender', 'receiver')
+        .prefetch_related('replies__sender', 'replies__receiver')
+    )
+    return render(request, 'messaging/conversation.html', {'messages': messages})
 
 @login_required
 def send_message(request):   
