@@ -8,7 +8,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-# Expose Django default port
+# Optional EXPOSE (still good practice)
 EXPOSE 8000
 
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+# ALX wants -p in CMD
+CMD ["python", "manage.py", "runserver", "-p", "8000", "0.0.0.0:8000"]
