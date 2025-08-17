@@ -1,0 +1,29 @@
+#!/bin/bash
+# Script: kubctl-0x01
+# Purpose: Scale Django app in Kubernetes, verify, perform load testing, and monitor resources
+
+# Name of your Django deployment
+DEPLOYMENT_NAME="django-deployment"  # <-- Replace with your actual deployment name
+NAMESPACE="default"                  # Change if using another namespace
+
+echo "Scaling $DEPLOYMENT_NAME to 3 replicas..."
+kubectl scale deployment $DEPLOYMENT_NAME --replicas=3 -n $NAMESPACE
+
+echo "Waiting for pods to be ready..."
+kubectl rollout status deployment/$DEPLOYMENT_NAME -n $NAMESPACE
+
+echo "Listing all pods:"
+kubectl get pods -n $NAMESPACE
+
+# Perform load test using wrk (replace URL with your Django service URL)
+APP_URL="http://localhost:8000"  # Change if using NodePort or ingress
+if command -v wrk >/dev/null 2>&1; then
+    echo "Running load test with wrk..."
+    wrk -t2 -c5 -d10s $APP_URL
+else
+    echo "wrk is not installed. Skipping load test."
+fi
+
+echo "Resource usage:"
+kubectl top pods -n $NAMESPACE
+
