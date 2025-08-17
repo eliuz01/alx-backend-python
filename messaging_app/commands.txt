@@ -1,0 +1,12 @@
+# Ensure Minikube is running
+minikube status
+
+# Set kubectl context to minikube
+kubectl config use-context minikube
+
+# Apply Nginx Ingress controller
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.9.1/deploy/static/provider/cloud/deploy.yaml --validate=false
+
+# Verify Ingress controller pods
+kubectl get pods -n ingress-nginx
+
