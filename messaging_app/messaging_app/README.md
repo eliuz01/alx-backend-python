@@ -1,0 +1,5 @@
+#.env
+MYSQL_ROOT_PASSWORD=rootpassword123
+MYSQL_DATABASE=messaging_db
+MYSQL_USER=messaging_user
+MYSQL_PASSWORD=securepassword123
