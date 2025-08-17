@@ -1,0 +1,31 @@
+#!/bin/bash
+# kurbeScrip - Start a local Kubernetes cluster with Minikube
+
+set -e
+
+echo "=== Checking for Minikube ==="
+if ! command -v minikube &> /dev/null
+then
+    echo "Minikube not found. Installing..."
+    curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+    sudo install minikube-linux-amd64 /usr/local/bin/minikube
+    rm minikube-linux-amd64
+fi
+
+echo "=== Checking for kubectl ==="
+if ! command -v kubectl &> /dev/null
+then
+    echo "kubectl not found. Installing..."
+    curl -LO "https://dl.k8s.io/release/$(curl -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+    chmod +x kubectl
+    sudo mv kubectl /usr/local/bin/
+fi
+
+echo "=== Starting Minikube with Docker driver ==="
+minikube start --driver=docker
+
+echo "=== Verifying cluster ==="
+kubectl cluster-info
+
+echo "=== Retrieving pods ==="
+kubectl get pods -A
