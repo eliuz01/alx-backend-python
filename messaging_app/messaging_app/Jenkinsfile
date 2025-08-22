@@ -1,12 +1,17 @@
 pipeline {
     agent any
 
+    environment {
+        DOCKER_HUB_CREDENTIALS = 'docker-hub-creds'   // Jenkins credentials ID for DockerHub
+        DOCKER_IMAGE = 'eliuz01/messaging_app'        // Your DockerHub repo (replace if different)
+    }
+
     stages {
         stage('Checkout') {
             steps {
                 git branch: 'main',
-                    url: 'https://github.com/eliuz01/messaging_app.git',
-                    credentialsId: 'github-creds'
+                    credentialsId: 'github-creds',
+                    url: 'https://github.com/eliuz01/alx-backend-python.git'
             }
         }
 
@@ -18,11 +23,28 @@ pipeline {
 
         stage('Run Tests') {
             steps {
-                sh 'pytest --junitxml=report.xml'
+                sh 'pytest --maxfail=1 --disable-warnings -q --junitxml=pytest-report.xml'
             }
             post {
                 always {
-                    junit 'report.xml'
+                    junit 'pytest-report.xml'
+                }
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    sh "docker build -t ${DOCKER_IMAGE}:latest ./messaging_app"
+                }
+            }
+        }
+
+        stage('Push Docker Image') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: "${DOCKER_HUB_CREDENTIALS}", passwordVariable: 'DOCKERHUB_PASS', usernameVariable: 'DOCKERHUB_USER')]) {
+                    sh 'echo $DOCKERHUB_PASS | docker login -u $DOCKERHUB_USER --password-stdin'
+                    sh "docker push ${DOCKER_IMAGE}:latest"
                 }
             }
         }
